@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Travel Assistant Chatbot</title>
+  <style>
+    /* Reset some default styles */
+    *{
+      box-sizing: border-box;
+    }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6DD5FA, #2980B9);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: #333;
+      user-select: none;
+    }
+    .container {
+      background: #fff;
+      width: 400px;
+      max-width: 95vw;
+      border-radius: 15px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+
+    header {
+      background: #2980B9;
+      padding: 1.5rem;
+      color: #fff;
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      letter-spacing: 1.2px;
+      user-select: none;
+    }
+
+    #chatbox {
+      padding: 1rem;
+      height: 400px;
+      overflow-y: auto;
+      background: #F0F7FF;
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      scrollbar-width: thin;
+      scrollbar-color: #2980B9 #d0e7ff;
+    }
+
+    /* Custom scrollbar for webkit browsers */
+    #chatbox::-webkit-scrollbar {
+      width: 8px;
+    }
+    #chatbox::-webkit-scrollbar-track {
+      background: #d0e7ff;
+      border-radius: 10px;
+    }
+    #chatbox::-webkit-scrollbar-thumb {
+      background-color: #2980B9;
+      border-radius: 10px;
+      border: 2px solid #d0e7ff;
+    }
+
+    .message {
+      max-width: 75%;
+      padding: 10px 15px;
+      border-radius: 20px;
+      line-height: 1.4;
+      font-size: 0.95rem;
+      word-wrap: break-word;
+      animation: fadeIn 0.4s ease forwards;
+    }
+
+    .user {
+      background: #2980B9;
+      color: white;
+      align-self: flex-end;
+      border-bottom-right-radius: 5px;
+      box-shadow: 0 2px 8px rgba(41, 128, 185, 0.3);
+    }
+
+    .bot {
+      background: #D6E9FF;
+      color: #004A87;
+      align-self: flex-start;
+      border-bottom-left-radius: 5px;
+      box-shadow: 0 2px 8px rgba(41, 128, 185, 0.15);
+      font-weight: 600;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    .input-area {
+      display: flex;
+      border-top: 1px solid #ddd;
+      background: white;
+    }
+
+    #userInput {
+      flex-grow: 1;
+      border: none;
+      padding: 1rem 1.2rem;
+      font-size: 1rem;
+      border-radius: 0 0 0 15px;
+      outline: none;
+      color: #333;
+      transition: background-color 0.3s;
+    }
+
+    #userInput::placeholder {
+      color: #999;
+      font-style: italic;
+    }
+
+    #userInput:focus {
+      background-color: #f0f7ff;
+    }
+
+    button {
+      background: #2980B9;
+      border: none;
+      color: white;
+      font-weight: 700;
+      font-size: 1rem;
+      padding: 0 1.8rem;
+      cursor: pointer;
+      border-radius: 0 0 15px 0;
+      transition: background-color 0.3s ease;
+      user-select: none;
+    }
+
+    button:hover {
+      background: #1B5F91;
+    }
+
+    button:active {
+      background: #14506a;
+    }
+
+    @media (max-width: 480px) {
+      .container {
+        width: 100vw;
+        height: 100vh;
+        border-radius: 0;
+      }
+      #chatbox {
+        height: 75vh;
+      }
+    }
+  </style>
+</head>
+<body>
+ 
+  <div class="container">
+    <header>Travel Assistant Chatbot</header>
+    <div id="chatbox" aria-live="polite" aria-atomic="false" role="log"></div>
+    <div class="input-area">
+      <input
+        type="text"
+        id="userInput"
+        placeholder="Ask me about travel destinations, packages, or tips..."
+        autocomplete="off"
+        aria-label="Type your question here"
+      />
+      <button onclick="sendMessage()" aria-label="Send message">Send</button>
+    </div>
+  </div>
+
+  <script>
+    async function sendMessage() {
+      const input = document.getElementById("userInput");
+      const message = input.value.trim();
+      if (!message) return;
+
+      const chatbox = document.getElementById("chatbox");
+
+      // Show user's message
+      chatbox.innerHTML += `<div class="message user"><b>You:</b> ${escapeHtml(message)}</div>`;
+
+      input.value = "";
+      chatbox.scrollTop = chatbox.scrollHeight;
+
+      try {
+        const response = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message })
+        });
+
+        const data = await response.json();
+chatbox.innerHTML += `<div class="message bot"><b>Bot:</b> ${escapeHtml(data.reply)}</div>`;
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+      } catch (err) {
+        chatbox.innerHTML += `<div class="message bot" style="color:red;">Error contacting server.</div>`;
+
+        chatbox.scrollTop = chatbox.scrollHeight;
+      }
+    }
+
+    // Send message on Enter key press
+    document.getElementById("userInput").addEventListener("keydown", function(e) {
+      if (e.key === "Enter") {
+        sendMessage();
+      }
+    });
+
+    // Simple HTML escape to prevent injection attacks
+    function escapeHtml(text) {
+      return text.replace(/[&<>"']/g, function (match) {
+        return ({
+          '&': '&amp;',
+          '<': '&lt;',
+          '>': '&gt;',
+          '"': '&quot;',
+          "'": '&#039;'
+        })[match];
+      });
+    }
+  </script>
+</body>
+</html>
